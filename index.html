@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>生日快乐 · 姐姐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg1:#FBF7F0;
+  --bg2:#F0E6D0;
+  --gold1:#C8A45C;
+  --gold2:#D4AF37;
+  --gold3:#A0874A;
+  --rose:#D4A090;
+  --rose-light:#EBC4B8;
+  --text:#3A3020;
+}
+
+html,body{width:100%;height:100%;height:-webkit-fill-available;overflow:hidden;font-family:'Noto Serif SC',serif}
+body{
+  display:flex;align-items:flex-start;justify-content:center;
+  background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg1) 100%);
+  padding:24px;
+}
+
+#canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+.ambient{position:fixed;pointer-events:none;z-index:0;border-radius:50%}
+.ambient-1{top:-12%;right:-8%;width:55vw;height:55vw;
+  background:radial-gradient(circle,rgba(213,175,55,.07) 0%,transparent 65%)}
+.ambient-2{bottom:-18%;left:-12%;width:65vw;height:65vw;
+  background:radial-gradient(circle,rgba(200,164,92,.05) 0%,transparent 60%)}
+.ambient-3{top:32%;left:50%;transform:translate(-50%,-50%);width:40vw;height:40vw;
+  background:radial-gradient(circle,rgba(213,175,55,.05) 0%,transparent 60%)}
+.ambient-4{bottom:20%;right:-5%;width:35vw;height:35vw;
+  background:radial-gradient(circle,rgba(212,160,144,.04) 0%,transparent 65%)}
+
+#scroll{
+  position:relative;z-index:1;
+  width:100%;max-width:380px;
+  max-height:100dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  display:flex;flex-direction:column;align-items:center;
+  padding:4vh 0;
+}
+#scroll::-webkit-scrollbar{display:none}
+#scroll.centered{justify-content:center;overflow-y:hidden}
+
+#content{
+  text-align:center;
+  width:100%;
+  display:flex;flex-direction:column;align-items:center;
+}
+
+/* ── 装饰玫瑰 ── */
+.rose-ornament{position:absolute;pointer-events:none;opacity:.3}
+.rose-ornament svg{display:block}
+.rose-ornament--tl{top:-8px;left:-16px;transform:rotate(-15deg)}
+.rose-ornament--br{bottom:-4px;right:-12px;transform:rotate(160deg)}
+
+/* ── 蜡烛 ── */
+.candle-wrap{
+  position:relative;height:116px;margin-bottom:16px;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.candle{
+  position:relative;width:34px;height:72px;
+  background:linear-gradient(180deg,#FFF8E7 0%,#F5E6C8 40%,#E8D5A3 100%);
+  border-radius:5px 5px 7px 7px;
+  box-shadow:0 3px 14px rgba(200,164,92,.3);
+  transition:box-shadow .6s ease;
+}
+.candle .stripe{
+  position:absolute;left:8px;right:8px;height:2px;
+  background:rgba(200,164,92,.14);border-radius:1px;
+}
+.candle .stripe:nth-child(1){top:22px}
+.candle .stripe:nth-child(2){top:38px}
+.candle .stripe:nth-child(3){top:54px}
+.wax-drip{
+  position:absolute;top:-3px;left:-1px;right:-1px;height:8px;
+  background:linear-gradient(180deg,#FFF8E7,#f5e8c8);
+  border-radius:5px 5px 3px 3px;
+}
+.wax-drip .drop{
+  position:absolute;bottom:-6px;width:5px;height:8px;
+  background:linear-gradient(180deg,#FFF8E7,#f0e0be);
+  border-radius:0 0 4px 4px;
+}
+.wax-drip .drop:nth-child(1){left:4px;height:10px;bottom:-8px}
+.wax-drip .drop:nth-child(2){right:6px;height:6px;bottom:-4px}
+.wax-drip .drop:nth-child(3){left:14px;height:5px;bottom:-3px}
+.wick{
+  position:absolute;top:4px;left:50%;transform:translateX(-50%);
+  width:2px;height:6px;background:#8A7050;border-radius:1px;z-index:2;
+}
+.wick::after{
+  content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:3px;height:3px;background:#6A5040;border-radius:50%;
+}
+.flame{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  width:18px;height:30px;z-index:3;
+  background:radial-gradient(ellipse 70% 100% at 50% 100%,#FFE680 0%,#FF8C00 40%,transparent 72%);
+  border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation:flame 1.8s ease-in-out infinite alternate;
+  transition:opacity .35s ease,transform .35s ease;
+  will-change:transform;
+}
+@keyframes flame{
+  0%{transform:translateX(-50%) scale(1) rotate(-2deg)}
+  40%{transform:translateX(-50%) scale(1.06,1.12) rotate(0deg)}
+  100%{transform:translateX(-50%) scale(.93) rotate(2.5deg)}
+}
+.flame-glow{
+  position:absolute;top:-32px;left:50%;transform:translateX(-50%);
+  width:60px;height:52px;z-index:2;
+  background:radial-gradient(circle,rgba(255,215,0,.3) 0%,rgba(255,140,0,.06) 35%,transparent 70%);
+  border-radius:50%;
+  animation:glowPulse 2.6s ease-in-out infinite alternate;
+  transition:opacity .6s ease;
+}
+@keyframes glowPulse{
+  0%{opacity:.5;transform:translateX(-50%) scale(.9)}
+  100%{opacity:1;transform:translateX(-50%) scale(1.2)}
+}
+.blown .flame{opacity:0;transform:translateX(-50%) scale(0) !important;animation:none}
+.blown .flame-glow{opacity:0;animation:none}
+.blown .candle{box-shadow:0 2px 8px rgba(200,164,92,.12)}
+.blown .wick::after{background:#5A4030;height:4px;width:3px;border-radius:50%;top:6px}
+.blown .wax-drip{opacity:.7}
+
+.smoke{
+  position:absolute;pointer-events:none;z-index:4;border-radius:50%;
+  background:radial-gradient(circle,rgba(210,195,170,.3) 0%,transparent 70%);
+  animation:smokeRise 2s ease-out forwards;
+}
+@keyframes smokeRise{
+  0%{transform:translateY(0) scale(1);opacity:.45}
+  25%{opacity:.2}
+  100%{transform:translateY(-80px) scale(3.5);opacity:0}
+}
+.spark{
+  position:absolute;pointer-events:none;z-index:5;border-radius:50%;
+  background:radial-gradient(circle,#FFE680,#D4AF37);
+  animation:sparkFade .7s ease-out forwards;
+}
+@keyframes sparkFade{
+  0%{opacity:1;transform:translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}
+}
+
+/* ── 涟漪 ── */
+.ripple{
+  position:fixed;pointer-events:none;z-index:20;border-radius:50%;
+  border:2px solid rgba(213,175,55,.35);
+  animation:rippleAnim .9s ease-out forwards;
+}
+@keyframes rippleAnim{
+  0%{width:0;height:0;opacity:.6;left:var(--rx);top:var(--ry)}
+  100%{width:120px;height:120px;opacity:0;left:var(--rx2);top:var(--ry2)}
+}
+
+/* ── 标题 ── */
+h1{
+  font-size:clamp(54px,14vw,80px);font-weight:900;letter-spacing:.06em;
+  background:linear-gradient(135deg,#C8A45C 0%,#F5E6B8 35%,#D4AF37 50%,#E8D5A3 70%,#A0874A 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 2px 10px rgba(213,175,55,.25));
+  margin-bottom:6px;line-height:1.15;
+}
+.to-line{
+  font-size:clamp(18px,4vw,22px);color:var(--gold3);
+  letter-spacing:.14em;margin-bottom:6px;font-weight:600;
+}
+.to-line em{font-style:normal;color:var(--gold2)}
+.hint{
+  font-size:13px;color:var(--gold3);letter-spacing:.06em;opacity:.55;
+  margin-top:2px;transition:opacity .6s ease;
+}
+.hint.hidden{opacity:0}
+
+/* ── 祝福区 ── */
+#reveal{
+  opacity:0;max-height:0;overflow:hidden;
+  transition:opacity .8s ease,max-height 1.2s ease;
+  display:flex;flex-direction:column;align-items:center;
+  pointer-events:none;width:100%;
+}
+#reveal.show{
+  opacity:1;max-height:800px;pointer-events:auto;
+}
+
+.badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 18px 6px 14px;
+  border:1.5px solid rgba(200,164,92,.35);
+  border-radius:20px;
+  font-size:13px;color:var(--gold3);letter-spacing:.04em;
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  margin-bottom:10px;
+  opacity:0;transform:translateY(8px) scale(.97);
+}
+#reveal.show .badge{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) .3s forwards}
+
+.delim{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  opacity:0;transform:translateY(8px) scale(.97);
+  margin-bottom:4px;width:100%;
+  padding:0 20px;
+}
+#reveal.show .delim{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) .55s forwards}
+.delim hr{border:none;flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold2),transparent)}
+.delim .rose-dot{width:8px;height:8px;opacity:.35;flex-shrink:0}
+.delim .rose-dot svg{display:block;width:100%;height:100%}
+
+.message{
+  font-size:clamp(15px,3.6vw,18px);line-height:2.05;
+  color:var(--text);letter-spacing:.05em;
+  opacity:0;transform:translateY(8px) scale(.97);
+}
+#reveal.show .message{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) .8s forwards}
+.message p{margin-bottom:4px}
+.message em{font-style:normal;color:var(--gold2);font-weight:600}
+
+/* ── 照片框 ── */
+.photo-wrap{
+  opacity:0;transform:translateY(8px) scale(.97);
+  margin:12px 0 8px;
+}
+#reveal.show .photo-wrap{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) 1.05s forwards}
+
+.photo-frame{
+  width:80px;height:80px;border-radius:50%;
+  padding:3px;
+  background:linear-gradient(135deg,var(--gold1),var(--gold2),var(--gold3));
+  margin:0 auto;
+  box-shadow:0 2px 12px rgba(200,164,92,.25);
+}
+.photo-frame-inner{
+  width:100%;height:100%;border-radius:50%;
+  overflow:hidden;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;
+}
+.photo-img{
+  width:100%;height:100%;object-fit:cover;border-radius:50%;
+  display:block;
+}
+
+/* ── 私密回忆 ── */
+.private-note{
+  font-size:clamp(13px,3.2vw,15px);line-height:1.9;
+  color:var(--rose);letter-spacing:.04em;
+  opacity:0;transform:translateY(8px) scale(.97);
+  margin:4px 0;
+  font-weight:500;
+}
+#reveal.show .private-note{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) 1.2s forwards}
+
+/* ── 署名行 ── */
+.signature-wrap{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  flex-wrap:wrap;
+  opacity:0;transform:translateY(8px) scale(.97);
+  margin:10px 0 8px;
+}
+#reveal.show .signature-wrap{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) 1.35s forwards}
+.signature{
+  font-family:'Playfair Display',serif;
+  font-size:15px;font-style:italic;color:var(--gold3);letter-spacing:.1em;
+}
+.signature-from{
+  font-size:13px;color:var(--gold3);letter-spacing:.08em;
+}
+.signature-date{
+  font-family:'Playfair Display',serif;
+  font-size:12px;color:var(--gold3);letter-spacing:.06em;opacity:.6;
+  width:100%;margin-top:2px;
+}
+
+/* ── 花束 ── */
+.bouquet-wrap{
+  opacity:0;transform:translateY(8px) scale(.97);
+  margin:6px 0 4px;
+}
+#reveal.show .bouquet-wrap{animation:revealItem .7s cubic-bezier(.16,.85,.45,1) 1.45s forwards}
+.bouquet svg{display:block;margin:0 auto}
+
+/* ── 重置按钮 ── */
+.btn-reset{
+  border:1.5px solid rgba(200,164,92,.3);
+  background:rgba(255,255,255,.4);
+  color:var(--gold3);
+  font-family:'Noto Serif SC',serif;
+  font-size:13px;letter-spacing:.04em;
+  padding:7px 20px;border-radius:18px;
+  cursor:pointer;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  transition:all .35s ease;
+  opacity:0;
+  margin-top:6px;
+}
+#reveal.show .btn-reset{animation:revealItem .7s ease 1.6s forwards}
+.btn-reset:active{transform:scale(.95);background:rgba(255,255,255,.7)}
+
+@keyframes revealItem{
+  0%{opacity:0;transform:translateY(8px) scale(.97)}
+  60%{opacity:1;transform:translateY(-2px) scale(1.01)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+@media(max-width:360px){
+  body{padding:16px}
+  .candle-wrap{height:96px}
+  .candle{height:58px;width:28px}
+  .candle .stripe{left:6px;right:6px}
+  .candle .stripe:nth-child(1){top:18px}
+  .candle .stripe:nth-child(2){top:32px}
+  .candle .stripe:nth-child(3){top:46px}
+  .flame{top:-14px;width:14px;height:24px}
+  .flame-glow{top:-24px;width:44px;height:40px}
+  .wax-drip .drop:nth-child(1){left:3px}
+  .wax-drip .drop:nth-child(2){right:4px}
+  .message{font-size:14px;line-height:1.9}
+  .badge{font-size:12px;padding:5px 14px 5px 12px}
+  .photo-frame{width:66px;height:66px}
+  .rose-ornament--tl{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+<div class="ambient ambient-4"></div>
+
+<canvas id="canvas"></canvas>
+
+<div id="scroll" class="centered">
+<div id="content">
+
+  <div class="rose-ornament rose-ornament--tl">
+    <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="14" r="9" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="12" cy="23" r="8" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="28" cy="23" r="8" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="16" cy="30" r="7" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="24" cy="30" r="7" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="20" cy="23" r="4" fill="rgba(200,150,140,0.3)"/>
+    </svg>
+  </div>
+
+  <div class="rose-ornament rose-ornament--br">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="14" r="9" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="12" cy="23" r="8" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="28" cy="23" r="8" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="16" cy="30" r="7" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="24" cy="30" r="7" fill="rgba(212,160,144,0.15)" stroke="rgba(212,160,144,0.3)" stroke-width=".6"/>
+      <circle cx="20" cy="23" r="4" fill="rgba(200,150,140,0.3)"/>
+    </svg>
+  </div>
+
+  <div class="candle-wrap" id="candleArea">
+    <div class="candle">
+      <div class="wax-drip">
+        <div class="drop"></div>
+        <div class="drop"></div>
+        <div class="drop"></div>
+      </div>
+      <div class="stripe"></div>
+      <div class="stripe"></div>
+      <div class="stripe"></div>
+      <div class="wick"></div>
+      <div class="flame" id="flame"></div>
+      <div class="flame-glow" id="glow"></div>
+    </div>
+  </div>
+
+  <h1>生日快乐</h1>
+  <p class="to-line">To <em>姐姐</em></p>
+  <p class="hint" id="hint">轻触蜡烛 · 许个愿</p>
+
+  <div id="reveal">
+    <div class="badge"><span>🥈</span> 游泳比赛 · 第二名</div>
+    <div class="delim">
+      <hr>
+      <span class="rose-dot">
+        <svg viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="5" r="3.6" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="5" cy="10" r="3.2" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="11" cy="10" r="3.2" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="8" cy="10" r="1.8" fill="rgba(200,164,92,0.3)"/>
+        </svg>
+      </span>
+      <hr>
+    </div>
+
+    <div class="message">
+      <p>泳池里劈波斩浪的样子，</p>
+      <p>比奖牌更闪亮。</p>
+      <p>愿新的一岁——</p>
+      <p>工作<em>从容坦荡</em>，案牍不劳形，</p>
+      <p>前路<em>宽且长</em>，步步皆顺心。</p>
+      <p>所有热爱都<em>游刃有余</em>。</p>
+    </div>
+
+    <div class="photo-wrap">
+      <div class="photo-frame">
+        <div class="photo-frame-inner">
+          <img class="photo-img" src="photo.jpg" alt="photo">
+        </div>
+      </div>
+    </div>
+
+    <div class="delim" style="margin-top:4px">
+      <hr><span class="rose-dot">
+        <svg viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="5" r="3.6" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="5" cy="10" r="3.2" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="11" cy="10" r="3.2" fill="rgba(200,164,92,0.2)" stroke="rgba(200,164,92,0.4)" stroke-width=".4"/>
+          <circle cx="8" cy="10" r="1.8" fill="rgba(200,164,92,0.3)"/>
+        </svg>
+      </span><hr>
+    </div>
+
+    <div class="signature-wrap">
+      <span class="signature">♡</span>
+      <span class="signature-from">from 弟弟</span>
+      <span class="signature-date">2026.06.28</span>
+    </div>
+
+    <div class="bouquet-wrap">
+      <div class="bouquet">
+        <svg width="48" height="36" viewBox="0 0 48 36" fill="none">
+          <path d="M24 30 L18 24 L20 22 L24 26 L28 22 L30 24 Z" fill="rgba(212,160,144,0.25)" stroke="rgba(212,160,144,0.3)" stroke-width=".5"/>
+          <path d="M16 22 L14 16 L17 15 L18 20 Z" fill="rgba(212,160,144,0.2)" stroke="rgba(212,160,144,0.25)" stroke-width=".4"/>
+          <path d="M32 22 L34 16 L31 15 L30 20 Z" fill="rgba(212,160,144,0.2)" stroke="rgba(212,160,144,0.25)" stroke-width=".4"/>
+          <path d="M24 20 L20 14 L23 12 L24 17 L25 12 L28 14 Z" fill="rgba(212,160,144,0.3)" stroke="rgba(212,160,144,0.3)" stroke-width=".4"/>
+          <path d="M24 30 L24 26" stroke="rgba(160,140,120,0.3)" stroke-width="1"/>
+          <path d="M24 26 L20 22" stroke="rgba(160,140,120,0.2)" stroke-width=".6"/>
+          <path d="M24 26 L28 22" stroke="rgba(160,140,120,0.2)" stroke-width=".6"/>
+          <ellipse cx="20" cy="30" rx="3" ry="1.5" fill="rgba(160,140,120,0.15)"/>
+          <ellipse cx="28" cy="30" rx="3" ry="1.5" fill="rgba(160,140,120,0.15)"/>
+        </svg>
+      </div>
+    </div>
+
+    <button class="btn-reset" id="btnReset">再许一次</button>
+  </div>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let frame,hasBlown=false,dpr=window.devicePixelRatio||1,dim={w:0,h:0};
+let GOLD_N=45,PETAL_N=20,CONFETTI_N=0,confettiTimers=[];
+
+function resize(){
+  dim.w=innerWidth;dim.h=innerHeight;
+  canvas.width=dim.w*dpr;canvas.height=dim.h*dpr;
+  canvas.style.width=dim.w+'px';canvas.style.height=dim.h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+let R=[],P=[],C=[];
+
+function rand(a,b){return a+Math.random()*(b-a)}
+const PETAL_COLORS=['#D4A090','#EBC4B8','#D8AEA0','#E0B8AC','#CC9888'];
+
+class Spark{
+  constructor(){this.reset()}
+  reset(){
+    this.x=Math.random()*dim.w;this.y=Math.random()*dim.h;
+    this.sz=rand(1.5,5.5);this.bo=rand(.1,.5);
+    this.sp=rand(.12,.28);this.ph=Math.random()*Math.PI*2;
+    this.life=0;this.mL=rand(180,280);
+    this.dx=rand(-.08,.08);this.dy=rand(-.18,-.04);
+  }
+  live(){
+    this.life++;this.ph+=.025;
+    this.x+=Math.sin(this.ph)*.2+this.dx;this.y+=this.dy*this.sp/.2;
+    if(this.life>this.mL||this.y<-20||this.x<-20||this.x>dim.w+20)
+      {this.reset();this.y=dim.h+8}
+  }
+  draw(){
+    const o=this.bo*(.7+.3*Math.sin(this.ph*1.3));
+    ctx.fillStyle='rgba(200,164,92,'+o+')';
+    ctx.beginPath();ctx.arc(this.x,this.y,this.sz,0,Math.PI*2);ctx.fill();
+    if(this.sz>2.5){
+      ctx.beginPath();ctx.arc(this.x,this.y,this.sz*2.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(200,164,92,'+(o*.1)+')';ctx.fill();
+    }
+  }
+}
+
+class Petal{
+  constructor(){this.reset()}
+  reset(){
+    this.x=rand(0,dim.w);this.y=rand(-50,-10);
+    this.w=rand(4,9);this.h=rand(2,4);
+    this.color=PETAL_COLORS[Math.floor(Math.random()*PETAL_COLORS.length)];
+    this.bo=rand(.25,.55);this.angle=Math.random()*Math.PI*2;
+    this.rs=rand(-.025,.025);this.fs=rand(.3,.7);
+    this.sw=rand(.3,.7);this.sp=Math.random()*Math.PI*2;
+  }
+  live(){
+    this.y+=this.fs;this.x+=Math.sin(this.sp)*this.sw;
+    this.angle+=this.rs;this.sp+=.025;
+    if(this.y>dim.h+10){this.reset();this.y=-20}
+  }
+  draw(){
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    ctx.globalAlpha=this.bo;
+    ctx.beginPath();ctx.ellipse(0,0,this.w,this.h,0,0,Math.PI*2);
+    ctx.fillStyle=this.color;ctx.fill();ctx.restore();
+  }
+}
+
+/* 礼花 */
+const CONFETTI_COLORS=['rgba(200,164,92,','rgba(213,175,55,','rgba(235,196,184,','rgba(255,215,0,','rgba(210,195,170,'];
+class Confetti{
+  constructor(){
+    this.x=rand(20,dim.w-20);this.y=-10-rand(0,30);
+    this.w=rand(3,7);this.h=rand(2,4);
+    this.color=CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    this.bo=rand(.4,.7);this.angle=Math.random()*Math.PI*2;
+    this.rs=rand(-.12,.12);this.fs=rand(.8,1.8);
+    this.sw=rand(-.5,.5);this.life=0;this.mL=rand(120,250);
+  }
+  live(){
+    this.y+=this.fs;this.x+=this.sw;this.angle+=this.rs;
+    this.life++;
+  }
+  alive(){return this.life<this.mL&&this.y<dim.h+10}
+  draw(){
+    const o=this.bo*Math.min(1,(this.mL-this.life)/30);
+    if(o<=0)return;
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    ctx.globalAlpha=o;
+    ctx.fillStyle=this.color+'0.6)';
+    ctx.fillRect(-this.w/2,-this.h/2,this.w,this.h);ctx.restore();
+  }
+}
+
+function spawnConfetti(n){
+  for(let i=0;i<n;i++){
+    setTimeout(()=>{
+      C.push(new Confetti());
+    },i*30);
+  }
+}
+
+function init(){
+  R=[];P=[];
+  for(let i=0;i<GOLD_N;i++)R.push(new Spark());
+  for(let i=0;i<PETAL_N;i++)P.push(new Petal());
+}
+
+function animate(){
+  ctx.clearRect(0,0,dim.w,dim.h);
+  R.forEach(p=>{p.live();p.draw()});
+  P.forEach(p=>{p.live();p.draw()});
+  C=C.filter(c=>c.alive());
+  C.forEach(c=>{c.live();c.draw()});
+  frame=requestAnimationFrame(animate);
+}
+
+let rt;
+addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(resize,120)});
+
+/* ── 涟漪 ── */
+function ripple(e){
+  const x=e.clientX||(e.touches?e.touches[0].clientX:dim.w/2);
+  const y=e.clientY||(e.touches?e.touches[0].clientY:dim.h/2);
+  const el=document.createElement('div');
+  el.className='ripple';
+  el.style.setProperty('--rx',x+'px');
+  el.style.setProperty('--ry',y+'px');
+  el.style.setProperty('--rx2',(x-60)+'px');
+  el.style.setProperty('--ry2',(y-60)+'px');
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+/* ── 吹蜡烛 ── */
+function blowOut(e){
+  if(hasBlown)return;
+  if(e)e.preventDefault();
+  hasBlown=true;
+
+  const a=document.getElementById('candleArea');
+  const r=a.getBoundingClientRect();
+  const cx=r.left+r.width/2,cy=r.top+4;
+
+  a.classList.add('blown');
+  document.getElementById('hint').classList.add('hidden');
+
+  /* 星火飞溅 */
+  for(let i=0;i<16;i++){
+    const sp=document.createElement('div');
+    sp.className='spark';
+    const an=Math.random()*Math.PI*2,dist=rand(40,80),sz=rand(2,4);
+    sp.style.cssText=`left:${cx-sz/2}px;top:${cy-sz/2}px;width:${sz}px;height:${sz}px;--tx:${Math.cos(an)*dist}px;--ty:${Math.sin(an)*dist}px;animation-duration:${rand(.5,.9)}s`;
+    document.body.appendChild(sp);
+    setTimeout(()=>sp.remove(),1200);
+  }
+
+  /* 烟缕 */
+  for(let i=0;i<6;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='smoke';
+      const sz=rand(8,20);
+      p.style.cssText=`width:${sz}px;height:${sz}px;left:${cx-sz/2+rand(-13,13)}px;top:${cy-sz/2+rand(-4,4)}px;animation-duration:${rand(1.4,2.4)}s`;
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),2800);
+    },i*100);
+  }
+
+  /* 礼花 */
+  setTimeout(()=>{spawnConfetti(40)},400);
+
+  /* 取消垂直居中，允许滚动 */
+  document.getElementById('scroll').classList.remove('centered');
+
+  /* 显示祝福 */
+  setTimeout(()=>document.getElementById('reveal').classList.add('show'),500);
+}
+
+/* ── 重置 ── */
+function resetCandle(){
+  hasBlown=false;
+  C=[]; /* 清空礼花 */
+  document.getElementById('candleArea').classList.remove('blown');
+  document.getElementById('reveal').classList.remove('show');
+  document.getElementById('hint').classList.remove('hidden');
+  document.getElementById('scroll').classList.add('centered');
+  /* 滚动到顶部 */
+  document.getElementById('scroll').scrollTop=0;
+}
+
+const ca=document.getElementById('candleArea');
+ca.addEventListener('click',blowOut);
+ca.addEventListener('touchend',blowOut);
+
+document.getElementById('btnReset').addEventListener('click',resetCandle);
+
+/* 全页面涟漪 */
+document.addEventListener('click',ripple);
+
+resize();init();animate();
+</script>
+</body>
+</html>
